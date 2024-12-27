@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Form</title>
+    <link href="member.css" rel="stylesheet" />
+</head>
+<body>
+<header>
+    <nav class="logo">
+        <h1>공대 최강</h1>
+    </nav>
+    <ul>
+        <li><a href="#">HW</a></li>
+        <li><a href="#">SW</a></li>
+    </ul>
+</header>
+<main>
+    <div class="form_div">
+        <form id="memberForm">
+            <label for="familyName">Family Name:</label>
+            <input type="text" id="familyName" name="familyName" required><br><br>
+
+            <label for="givenName">Given Name:</label>
+            <input type="text" id="givenName" name="givenName" required><br><br>
+
+            <label for="birth">Birth (YYYYMMDD):</label>
+            <input type="text" id="birth" name="birth" required><br><br>
+
+            <label for="phoneNumber">Phone Number:</label>
+            <input type="text" id="phoneNumber" name="phoneNumber" required><br><br>
+
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" required><br><br>
+
+            <label for="gender">Gender:</label>
+            <input type="text" id="gender" name="gender" required><br><br>
+
+            <label for="height">Height (cm):</label>
+            <input type="number" id="height" name="height" required><br><br>
+
+            <label for="weight">Weight (kg):</label>
+            <input type="number" id="weight" name="weight" required><br><br>
+
+            <label for="bloodType">Blood Type:</label>
+            <input type="text" id="bloodType" name="bloodType" required><br><br>
+
+            <label for="rhNegative">Rh Negative:</label>
+            <input type="checkbox" id="rhNegative" name="rhNegative"><br><br>
+
+            <button class="custom-btn btn-3" type="submit"><span>가입</span></button>
+            <a href="./index.html">뒤로가기</a>
+        </form>
+    </div>
+</main>
+
+</body>
+<script>
+    document.getElementById('memberForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // 기본 폼 제출 동작 방지
+
+        // 폼 데이터 수집
+        const formData = {
+            familyName: document.getElementById('familyName').value,
+            givenName: document.getElementById('givenName').value,
+            birth: document.getElementById('birth').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            address: document.getElementById('address').value,
+            gender: document.getElementById('gender').value,
+            height: parseInt(document.getElementById('height').value),
+            weight: parseInt(document.getElementById('weight').value),
+            bloodType: document.getElementById('bloodType').value,
+            rhNegative: document.getElementById('rhNegative').checked
+        };
+
+        // JSON 형식으로 서버에 데이터 전송
+        fetch('/member/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)  // 중첩된 객체를 사용하지 않고 평평한 객체로 전송
+        }).then(response => {
+            if (response.ok) {
+                alert('Member saved successfully!');
+            } else {
+                alert('Failed to save member.');
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the member.');
+        });
+    });
+
+</script>
+</html>

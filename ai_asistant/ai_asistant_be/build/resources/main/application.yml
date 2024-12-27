@@ -1,0 +1,39 @@
+spring:
+
+  profiles:
+    local: local
+    include: db
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ai_asistant?serverTimezone=Asia/Seoul
+    username: root
+    password: ma29562956!
+
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        show_sql: true
+
+  mvc:
+    static-path-pattern: "/**"
+  web:
+    resources:
+      add-mappings: false
+
+  thymeleaf:
+    cache: false
+    prefix: file:src/main/resources/templates/
+    suffix: .html
+
+  cloud:
+    gcp:
+      credentials:
+        location: classpath:aiassistant-432310-0327ad60b595.json
+
+server:
+  port: 9090
+  address: 0.0.0.0

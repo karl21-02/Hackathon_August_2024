@@ -1,0 +1,27 @@
+//아두이노에서 들어온 체온, 심박값을 파이썬에서 유선통신을 통해 가져오는 코드임.
+
+
+import serial
+import time
+
+def read_arduino_data():
+    # 시리얼 포트 설정 (포트 이름은 시스템에 따라 다를 수 있으니 장치관리자에서 확인 필요함, COM1 ~9 사이일것임 )
+    port = 'COM4' 
+    baudrate = 9600  # 아두이노와 동일한 보드레이트 설정 (중요함)
+
+    # 시리얼 포트 열기
+    ser = serial.Serial(port, baudrate, timeout=1)
+    time.sleep(2)  # 포트가 열릴 때까지 대기
+
+    try:
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.readline().decode('utf-8').strip()  # 아두이노에서 한 줄을 읽어 디코딩
+                print("수신된 데이터:", data)
+    except KeyboardInterrupt:
+        print("종료합니다.")
+    finally:
+        ser.close()  # 시리얼 포트 닫기
+
+if __name__ == "__main__":
+    read_arduino_data()

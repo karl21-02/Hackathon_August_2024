@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #transcription {
+            width: 100%;
+            height: 150px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #chatbox {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column-reverse; /* 최신 메시지가 아래에 나타나도록 */
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e1ffc7;
+        }
+        .title {
+            margin: 0 auto;
+            text-align: center;
+        }
+        .body_info {
+            margin-bottom: 10px;
+            margin-top: 30px;
+        }
+        #transcription {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .listening {
+            margin: 10px auto;
+        }
+        .listening_container {
+            text-align: center;
+        }
+        .arduino_title {
+            margin-bottom: 0px;
+        }
+        .arduino_container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">Voice Assistant AI</h1>
+    <h3 class="body_info">신체 정보</h3>
+    <textarea id="transcription" readonly></textarea>
+    <div class="listening_container">
+        <button class="listening" onclick="startListening()">Start Listening</button>
+        <button class="listening" onclick="stopListening()">Stop Listening</button>    
+    </div>
+    <div class="arduino_container">
+        <h4 class="arduino_title">Arduino Bluetooth Monitor</h4>
+        <button class="listening" onclick="connectSerial()">Connect to Arduino HC-06!</button>    
+    </div>
+    <div id="chatbox"></div>
+
+    <br><br><br><br>
+
+    <a href="./member.html">회원 정보 입력</a>
+
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    async function startListening() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            sendAudio(audioBlob);
+        };
+        mediaRecorder.start();
+    }
+
+    function stopListening() {
+        mediaRecorder.stop();
+    }
+
+    async function sendAudio(audioBlob) {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.wav');
+
+        const response = await fetch('/api/recognize', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.text();
+        addMessageToChatbox(result);
+    }
+
+    let port;
+    let reader;
+
+    async function connectSerial() {
+        try {
+            if (port && port.readable) {
+                await closeSerial(); // 포트가 이미 열려 있으면 먼저 닫습니다.
+            }
+
+            // COM 포트 연결 요청
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 }); // HC-06의 기본 baud rate
+
+            const decoder = new TextDecoderStream();
+            port.readable.pipeTo(decoder.writable);
+            reader = decoder.readable.getReader();
+
+            readLoop();
+        } catch (error) {
+            console.error("Serial connection failed: ", error);
+        }
+    }
+
+    async function closeSerial() {
+        if (reader) {
+            await reader.cancel(); // 읽기를 취소하고
+            reader.releaseLock(); // 잠금을 해제합니다.
+        }
+        if (port) {
+            await port.close(); // 포트를 닫습니다.
+        }
+    }
+
+    async function readLoop() {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                console.log("Stream closed");
+                reader.releaseLock();
+                break;
+            }
+            if (value) {
+                document.getElementById('transcription').value += value + '\n';
+                console.log("Received from HC-06: ", value);
+
+                sendBluetoothDataToServer(value.trim());
+            }
+        }
+    }
+
+    async function sendBluetoothDataToServer(data) {
+        const response = await fetch('/api/bluetooth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ data: data })
+        });
+
+        const result = await response.text();
+        addMessageToChatbox(result);
+    }
+
+    function addMessageToChatbox(message) {
+        const chatbox = document.getElementById('chatbox');
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message';
+        messageElement.innerText = message;
+        chatbox.prepend(messageElement);
+    }
+</script>
+</body>
+</html>
